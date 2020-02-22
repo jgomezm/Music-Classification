@@ -1,0 +1,38 @@
+I could not figure out how to work with the formatting on the excel. As I see it, these are the primary tasks:
+
+The time are long because they are 1 person weeks, how long it would take one person working on each task. So 2 people on a task will require less time, or separating allows for concurrent tasks.
+
+	1. Collect Data 
+		* Write API script: Learning the Spotify API and writing a script that will allow us to collect an arbitrary amount of data
+			~ 1 week
+				- Necessary first step, cannot be skipped and cannot be concurrent.
+		* Collect data: Monitor scraper collecting data
+			~ . > 1 week: Depends on amount of data and speed of API, no time limit
+				- Requires occasional attention and should be kept in mind but will not require much active engagement while it runs concurrent to other tasks
+	2. Data Preprocessing
+		* Structure data 
+			~ 1 week
+				- Can begin immediately after writing API script
+		* Augment data
+			~ 1 week
+				- Can begin immediately after structuring data
+	3. Build Network
+		* Learn about RNNs: Review literature, examples, and tutorials
+			~ > 2 weeks
+				- Begins along with overall project
+		* Implement Model: Construct a working base model
+			~ 2 weeks
+				- Concurrent to Learn about RNNs
+				- Concurrent to Augment Data
+				- Can begin after Structuring data
+	4. Iterate
+		* Tweak and improve model:
+			~ 3 - 4 weeks
+				- Final step, will require all the attention we are willing to give it
+	5. Train
+		* Train model: Train model to convergence
+			~ . > 1 week
+				- After deciding on an appropriate time to stop iterating
+
+
+
