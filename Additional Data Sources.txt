@@ -2,3 +2,6 @@ Apple Music API
 We can get a record label for the songs. These can be classes. Or, we can differentiate between major labels (top quantile of albums) and minor or no label. Just an idea.
 
 https://developer.apple.com/documentation/applemusicapi/get_a_catalog_album
+
+Spotify API Dashboard
+https://developer.spotify.com/dashboard/applications/ad3894b037f74b7390ab5bf093b438dc 
