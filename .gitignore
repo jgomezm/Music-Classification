@@ -3,3 +3,4 @@
 *.p
 *.v2
 *.trace
+.ipynb_checkpoints/

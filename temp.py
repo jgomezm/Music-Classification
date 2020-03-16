@@ -1,42 +1,27 @@
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
+import pickle
+import datetime
 
-client_credentials_manager = SpotifyClientCredentials(
-        "26399552a8ce4d1285397254189cac50",
-        "fdacbbba2dd34dbeb127dedb459f7ea3")
-sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+countriesOfInterest = ["HK", "JP", 'ZA', 'TN', 'TR', 'GB', 'MX', 'US', 'CO',
+                       'EC', 'AU', 'NZ']
 
-# get the track IDs in Germany Top 50
-ger_pl = sp.playlist("spotify:playlist:37i9dQZEVXbJiZcmkrIHGU")
-ger_t_list = []
-for track in ger_pl["tracks"]["items"]:
-    ger_t_list = ger_t_list + [track["track"]["uri"]]
+stats = pd.DataFrame()
+comb_data= pd.DataFrame()
+for country in countriesOfInterest:
+    data = pickle.load(open( "Raw Track Data\\" + country + "_train.p", "rb" ))
+    data = data.append(
+        pickle.load(open( "Raw Track Data\\" + country + "_val.p", "rb" )))
+    data = data.append(
+        pickle.load(open( "Raw Track Data\\" + country + "_test.p", "rb" )))
+    stats.loc[country,"n_tracks"] = data.track_id.nunique()
+    stats.loc[country,"n_playlists"] = data.Playlist.nunique()
+    stats.loc[country,"mean_n_segments"] = data.groupby("track_id").size().mean()
+    duration = data.groupby("track_id").duration.sum()
+    stats.loc[country,"mean_duration"] = str(datetime.timedelta(seconds=duration.mean()))
+    comb_data = comb_data.append(data)
 
-
-audio = sp.audio_analysis(ger_t_list[0])
-audio.keys()
-# Beats are subdivisions of bars. Tatums are subdivisions of beats.
-tatum_data = pd.DataFrame(audio["tatums"])
-tatum_data = tatum_data.assign(end = tatum_data.start + tatum_data.duration)
-(tatum_data.start - tatum_data.end.shift()).max()
-# Sequence with only one series (tatum durations). Could be used to train a
-# simple model.
-
-# Audio segments attempts to subdivide a song into many segments, with each 
-# segment containing a roughly consistent sound throughout its duration.
-# A segment contains 30 features.
-ger_data = pd.DataFrame()
-for track in ger_t_list:
-    audio = sp.audio_analysis(track)
-    segments_data =  pd.DataFrame(audio["segments"])
-    pitch = segments_data.pitches.apply(pd.Series)
-    pitch.columns = ["p" + str(i) for i in range(1,13)]
-    timbre = segments_data.timbre.apply(pd.Series)
-    timbre.columns = ["t" + str(i) for i in range(1,13)]
-    segments_data = segments_data.drop(["pitches", "timbre", "loudness_end"],
-                                       axis = 1)
-    segments_data = segments_data.join([pitch, timbre])
-    segments_data["track_id"] = track
-    ger_data = ger_data.append(segments_data)
-ger_data.groupby("track_id").count()
+stats.loc["aggregate","n_tracks"] = comb_data.track_id.nunique()
+stats.loc["aggregate","n_playlists"] = comb_data.Playlist.nunique()
+stats.loc["aggregate","mean_n_segments"] = comb_data.groupby("track_id").size().mean()
+duration = comb_data.groupby("track_id").duration.sum()
+stats.loc["aggregate","mean_duration"] = str(datetime.timedelta(seconds=duration.mean()))
