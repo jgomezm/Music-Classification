@@ -15,27 +15,28 @@ import tensorflow as tf
 #%%
 def splitSeconds(n, country, t, seconds, samplerate):
     length = seconds * samplerate
-    data = pickle.load( open( "Raw Track Data\\" + country + "_" + t + ".p", "rb" ))
-    # indices are not unique
-    data.reset_index(drop = True, inplace = True)
+    data = pickle.load( open( "Raw Track Data\\" + country + "_" + t + ".p", "rb" ) )
     tracks = data.track_id.unique()
     tracks = np.random.choice(tracks, size=n, replace=False)
     trackFeats = data[data.track_id.isin(tracks)]
     dur = trackFeats.iloc[:,1]
     long = trackFeats.loc[trackFeats.index.repeat(dur * samplerate)].reset_index(drop = True)
+    long = long.sort_values(by = ["track_id", "start"])
     long['change'] = long.track_id.eq(long.track_id.shift())
-    change = pd.Series(long[long.change == False].index)
+    change = long[long.change == False].index
     long = long.iloc[:, 5:30]
-    sizes = change.shift(-1) - change
-    sizes.iloc[-1] = long.shape[0] - change.iloc[-1]
-    sizes = sizes // length
-    indices = []
-    for i, size in enumerate(sizes):
-        patch = np.random.randint(0, size) # upper bound is size - 1
-        indices += list(range(change[i] + length*patch, change[i] + length*(patch+1)))
-    long = long.loc[indices]
-    long = np.stack(np.split(long, np.arange(1, n) * length))
-    return long, np.repeat(np.array([country]), long.shape[0])
+    indices = np.concatenate((np.arange(0, long.shape[0], length), change))
+    indices = np.sort(indices)
+    indices = np.unique(indices)
+    partition = np.split(np.array(long), indices)
+    samples = []
+    for i in partition:
+        if i.shape[0] == length:
+            samples = samples + [i]
+    samples = np.stack(samples)
+    return samples, np.repeat(np.array([country]), samples.shape[0])
+
+
 
 #%%
 
