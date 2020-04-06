@@ -4,3 +4,5 @@
 *.v2
 *.trace
 .ipynb_checkpoints/
+Copy.ipynb
+sampling.py
