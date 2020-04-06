@@ -19,8 +19,10 @@ def splitSeconds(n, country, t, seconds, samplerate):
     tracks = data.track_id.unique()
     tracks = np.random.choice(tracks, size=n, replace=False)
     trackFeats = data[data.track_id.isin(tracks)]
+    del data
     dur = trackFeats.iloc[:,1]
     long = trackFeats.loc[trackFeats.index.repeat(dur * samplerate)].reset_index(drop = True)
+    del trackFeats
     long = long.sort_values(by = ["track_id", "start"])
     long['change'] = long.track_id.eq(long.track_id.shift())
     change = long[long.change == False].index
@@ -29,6 +31,7 @@ def splitSeconds(n, country, t, seconds, samplerate):
     indices = np.sort(indices)
     indices = np.unique(indices)
     partition = np.split(np.array(long), indices)
+    del long
     samples = []
     for i in partition:
         if i.shape[0] == length:
@@ -55,18 +58,22 @@ def getSamples(train_n, val_n, seconds, samplerate, countriesOfInterest,
         x2, y2 = splitSeconds(val_n, country, "val", seconds, samplerate)
         train_x = train_x + x1.tolist()
         train_labels = train_labels + y1.tolist()
+        del x1, y1
         val_x = val_x + x2.tolist()
         val_labels = val_labels + y2.tolist()
+        del x2, y2
     #train_x = np.array(train_x)
     y = np.dstack(train_x)
     train_x = np.rollaxis(y,-1)
+    del y
     train_labels = np.array(train_labels)
     #val_x = np.array(val_x)
     y = np.dstack(val_x)
     val_x = np.rollaxis(y,-1)
+    del y
     val_labels = np.array(val_labels)
     class_weights = class_weight.compute_class_weight('balanced',
-                                                     np.unique(train_labels),
+                                                     countriesOfInterest,
                                                      list(train_labels))
     train_labels = enc.transform(np.array(train_labels).reshape(-1,1)).toarray()
     val_labels = enc.transform(np.array(val_labels).reshape(-1,1)).toarray()
