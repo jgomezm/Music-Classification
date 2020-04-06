@@ -11,6 +11,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras.layers import LSTM, Dense, LSTM, Flatten, BatchNormalization, Dropout
 from tensorflow.keras.utils import to_categorical
 import tensorflow as tf
+import gc
 
 #%%
 def splitSeconds(n, country, t, seconds, samplerate):
@@ -37,6 +38,7 @@ def splitSeconds(n, country, t, seconds, samplerate):
         if i.shape[0] == length:
             samples = samples + [i]
     samples = np.stack(samples)
+    gc.collect()
     return samples, np.repeat(np.array([country]), samples.shape[0])
 
 
@@ -47,31 +49,42 @@ def getSamples(train_n, val_n, seconds, samplerate, countriesOfInterest,
                enc, verbose = 0):
     train_labels = pd.DataFrame()
     val_labels = pd.DataFrame()
-    train_x = []
+    train_x = None
     train_labels = []
-    val_x = []
+    val_x = None
     val_labels = []
     for country in countriesOfInterest:
         if verbose > 0:
             print("getting",country)
         x1, y1 = splitSeconds(train_n, country, "train", seconds, samplerate)
         x2, y2 = splitSeconds(val_n, country, "val", seconds, samplerate)
-        train_x = train_x + x1.tolist()
-        train_labels = train_labels + y1.tolist()
-        del x1, y1
-        val_x = val_x + x2.tolist()
-        val_labels = val_labels + y2.tolist()
-        del x2, y2
-    #train_x = np.array(train_x)
-    y = np.dstack(train_x)
-    train_x = np.rollaxis(y,-1)
-    del y
-    train_labels = np.array(train_labels)
+        if train_x is None:
+            train_x = x1
+            train_labels = y1
+            val_x = x2
+            val_labels = y2
+        else:
+            train_x = np.append(train_x, x1, axis = 0)
+            train_labels = np.append(train_labels, y1, axis = 0)
+            del x1, y1
+            val_x = np.append(val_x, x2, axis = 0)
+            val_labels = np.append(val_labels, y2, axis = 0)
+            del x2, y2
+        gc.collect()
+  #  train_x = np.array(train_x)
+    gc.collect()
+    #y = np.dstack(train_x)
+    #del train_x
+    #train_x = np.rollaxis(y,-1)
+    #del y
+   # train_labels = np.array(train_labels)
     #val_x = np.array(val_x)
-    y = np.dstack(val_x)
-    val_x = np.rollaxis(y,-1)
-    del y
-    val_labels = np.array(val_labels)
+    gc.collect()
+    #y = np.dstack(val_x)
+    #del val_x
+    #val_x = np.rollaxis(y,-1)
+    #del y
+   # val_labels = np.array(val_labels)
     class_weights = class_weight.compute_class_weight('balanced',
                                                      countriesOfInterest,
                                                      list(train_labels))
