@@ -5,16 +5,21 @@ from sklearn.utils import class_weight
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
-import tensorflow.keras as keras
-from tensorflow.keras import Sequential
-from tensorflow.keras import regularizers
-from tensorflow.keras.layers import LSTM, Dense, LSTM, Flatten, BatchNormalization, Dropout
-from tensorflow.keras.utils import to_categorical
-import tensorflow as tf
+#import tensorflow.keras as keras
+import plaidml.keras
+import os
+plaidml.keras.install_backend()
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+import keras
+from keras import Sequential
+from keras import regularizers
+from keras.layers import LSTM, Dense, Flatten, BatchNormalization, Dropout
+from keras.utils import to_categorical
+#import tensorflow as tf
 import gc
 
 #%%
-def splitSeconds(n, sample_n, country, t, seconds, samplerate):
+def splitSeconds(n, country, t, seconds, samplerate):
     length = seconds * samplerate
     data = pickle.load( open( "Raw Track Data\\" + country + "_" + t + ".p", "rb" ) )
     tracks = data.track_id.unique()
@@ -38,11 +43,6 @@ def splitSeconds(n, sample_n, country, t, seconds, samplerate):
         if i.shape[0] == length:
             samples = samples + [i]
     samples = np.stack(samples)
-    if sample_n is not None:
-        if sample_n <= len(samples):
-            samples = samples[np.random.choice(len(samples), size=sample_n, replace=False)]
-        else:
-            samples = samples[np.random.choice(len(samples), size=sample_n, replace=True)]
     gc.collect()
     return samples, np.repeat(np.array([country]), samples.shape[0])
 
@@ -50,7 +50,7 @@ def splitSeconds(n, sample_n, country, t, seconds, samplerate):
 
 #%%
 
-def getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInterest,
+def getSamples(train_n, val_n, seconds, samplerate, countriesOfInterest,
                enc, verbose = 0):
     train_labels = pd.DataFrame()
     val_labels = pd.DataFrame()
@@ -61,8 +61,8 @@ def getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInteres
     for country in countriesOfInterest:
         if verbose > 0:
             print("getting",country)
-        x1, y1 = splitSeconds(train_n, sample_n, country, "train", seconds, samplerate)
-        x2, y2 = splitSeconds(val_n, None, country, "val", seconds, samplerate)
+        x1, y1 = splitSeconds(train_n, country, "train", seconds, samplerate)
+        x2, y2 = splitSeconds(val_n, country, "val", seconds, samplerate)
         if train_x is None:
             train_x = x1
             train_labels = y1
@@ -98,29 +98,28 @@ def getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInteres
     return train_x, train_labels, val_x, val_labels, class_weights
 
 
-def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
-          countriesOfInterest, enc, epochs, tensorboard_callback, model_dir,
-          model, b_size):
+def train(iterations, learn_rate, train_n, val_n, seconds, samplerate,
+          countriesOfInterest, enc, epochs, model_dir,
+          model):
     for i in range(iterations):
         adam = keras.optimizers.Adam(lr=learn_rate)
         model.compile(loss = "categorical_crossentropy", optimizer= adam, metrics=["acc"])
-        train_x, train_labels, val_x, val_labels, class_weights = getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInterest, enc)
-        print("train", np.sum(train_labels, axis = 0))
-        print("val", np.sum(val_labels, axis = 0))
+        train_x, train_labels, val_x, val_labels, class_weights = getSamples(train_n, val_n, seconds, samplerate, countriesOfInterest, enc)
+        print(np.sum(train_labels, axis = 0))
         model.fit(train_x, train_labels,
                   epochs = i * epochs + epochs, 
                   initial_epoch = i * epochs,
                   shuffle = True,
                   validation_data = (val_x, val_labels),
-                  batch_size = b_size,
-                  class_weight = 2*class_weights,
-                 callbacks=[tensorboard_callback],
+                  batch_size = 2048,
+                  class_weight = class_weights,
+         #        callbacks=[tensorboard_callback],
                  verbose = 1)
-        model.save_weights(model_dir)
-        if i%5 == 0:
-            learn_rate = learn_rate/2
+        #model.save_weights(model_dir)
+        #if i%2 == 0:
+        #    learn_rate = learn_rate/2
         if i % 1 == 0:
-            preds = model.predict(val_x, batch_size = b_size, verbose = 1)
+            preds = model.predict(val_x, batch_size = 2048, verbose = 1)
          #   print(np.sum(train_labels, axis = 0))
             plt.imshow(
                 confusion_matrix(
@@ -131,7 +130,7 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
             )
             plt.pause(.5)
             plt.show()
-            preds = model.predict(train_x, batch_size = b_size, verbose = 1)
+            preds = model.predict(train_x, batch_size = 2048, verbose = 1)
             plt.imshow(
                 confusion_matrix(
                     enc.inverse_transform(preds), 
