@@ -113,11 +113,11 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
                   shuffle = True,
                   validation_data = (val_x, val_labels),
                   batch_size = b_size,
-                  class_weight = 2*class_weights,
+                  class_weight = class_weights,
                  callbacks=[tensorboard_callback],
                  verbose = 1)
         model.save_weights(model_dir)
-        if i%5 == 0:
+        if i%2 == 0:
             learn_rate = learn_rate/2
         if i % 1 == 0:
             preds = model.predict(val_x, batch_size = b_size, verbose = 1)
