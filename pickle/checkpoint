@@ -1,2 +1,2 @@
-model_checkpoint_path: "1_seconds_10_samples"
-all_model_checkpoint_paths: "1_seconds_10_samples"
+model_checkpoint_path: "1_seconds_100_samples"
+all_model_checkpoint_paths: "1_seconds_100_samples"
