@@ -108,8 +108,8 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, valsample_n, seconds
         adam = keras.optimizers.Adam(lr=learn_rate, amsgrad = True)
         model.compile(loss = "categorical_crossentropy", optimizer= adam, metrics=["acc"])
         train_x, train_labels, val_x, val_labels, class_weights = getSamples(train_n, sample_n, val_n, valsample_n, seconds, samplerate, countriesOfInterest, enc)
-        print("train", np.sum(train_labels, axis = 0))
-        print("val", np.sum(val_labels, axis = 0))
+        #print("train", np.sum(train_labels, axis = 0))
+        #print("val", np.sum(val_labels, axis = 0))
         model.fit(train_x, train_labels,
                   epochs = i * epochs + epochs, 
                   initial_epoch = i * epochs,
@@ -118,7 +118,7 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, valsample_n, seconds
                   batch_size = b_size,
                   class_weight = class_weights,
                  callbacks=[tensorboard_callback],
-                 verbose = 1)
+                 verbose = 0)
         model.save_weights(model_dir)
         #if i%2 == 0:
         #    learn_rate = learn_rate/2

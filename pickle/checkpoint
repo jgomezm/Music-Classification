@@ -1,2 +1,2 @@
-model_checkpoint_path: "save"
-all_model_checkpoint_paths: "save"
+model_checkpoint_path: "1_seconds_10_samples"
+all_model_checkpoint_paths: "1_seconds_10_samples"
