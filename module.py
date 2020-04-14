@@ -122,7 +122,7 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, valsample_n, seconds
         model.save_weights(model_dir)
         #if i%2 == 0:
         #    learn_rate = learn_rate/2
-        if i+1 % 5 == 0:
+        if i % 5 == 0:
             print(str(seconds) + "_seconds_" + str(samplerate) + "_samples" + " iteration" + str(i))
             preds = model.predict(val_x, batch_size = b_size, verbose = 1)
          #   print(np.sum(train_labels, axis = 0))
