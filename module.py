@@ -25,6 +25,8 @@ def splitSeconds(n, sample_n, country, t, seconds, samplerate):
     long = trackFeats.loc[trackFeats.index.repeat(dur * samplerate)].reset_index(drop = True)
     del trackFeats
     long = long.sort_values(by = ["track_id", "start"])
+    skip = np.random.randint(samplerate)
+    long = long[skip:]
     long['change'] = long.track_id.eq(long.track_id.shift())
     change = long[long.change == False].index
     long = long.iloc[:, 5:30]
@@ -50,7 +52,7 @@ def splitSeconds(n, sample_n, country, t, seconds, samplerate):
 
 #%%
 
-def getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInterest,
+def getSamples(train_n, sample_n, val_n, valsample_n, seconds, samplerate, countriesOfInterest,
                enc, verbose = 0):
     train_labels = pd.DataFrame()
     val_labels = pd.DataFrame()
@@ -62,7 +64,7 @@ def getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInteres
         if verbose > 0:
             print("getting",country)
         x1, y1 = splitSeconds(train_n, sample_n, country, "train", seconds, samplerate)
-        x2, y2 = splitSeconds(val_n, None, country, "val", seconds, samplerate)
+        x2, y2 = splitSeconds(val_n, valsample_n, country, "val", seconds, samplerate)
         if train_x is None:
             train_x = x1
             train_labels = y1
@@ -98,13 +100,14 @@ def getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInteres
     return train_x, train_labels, val_x, val_labels, class_weights
 
 
-def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
+def train(iterations, learn_rate, train_n, sample_n, val_n, valsample_n, seconds, samplerate,
           countriesOfInterest, enc, epochs, tensorboard_callback, model_dir,
           model, b_size):
     for i in range(iterations):
-        adam = keras.optimizers.Adam(lr=learn_rate)
+        gc.collect()
+        adam = keras.optimizers.Adam(lr=learn_rate, amsgrad = True)
         model.compile(loss = "categorical_crossentropy", optimizer= adam, metrics=["acc"])
-        train_x, train_labels, val_x, val_labels, class_weights = getSamples(train_n, sample_n, val_n, seconds, samplerate, countriesOfInterest, enc)
+        train_x, train_labels, val_x, val_labels, class_weights = getSamples(train_n, sample_n, val_n, valsample_n, seconds, samplerate, countriesOfInterest, enc)
         print("train", np.sum(train_labels, axis = 0))
         print("val", np.sum(val_labels, axis = 0))
         model.fit(train_x, train_labels,
@@ -117,8 +120,8 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
                  callbacks=[tensorboard_callback],
                  verbose = 1)
         model.save_weights(model_dir)
-        if i%2 == 0:
-            learn_rate = learn_rate/2
+        #if i%2 == 0:
+        #    learn_rate = learn_rate/2
         if i % 1 == 0:
             preds = model.predict(val_x, batch_size = b_size, verbose = 1)
          #   print(np.sum(train_labels, axis = 0))
@@ -131,6 +134,8 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
             )
             plt.pause(.5)
             plt.show()
+            del preds
+            gc.collect()
             preds = model.predict(train_x, batch_size = b_size, verbose = 1)
             plt.imshow(
                 confusion_matrix(
@@ -141,3 +146,6 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, seconds, samplerate,
             )
             plt.pause(.5)
             plt.show()
+            del preds
+            gc.collect()
+    return model
