@@ -118,7 +118,7 @@ def train(iterations, learn_rate, train_n, sample_n, val_n, valsample_n, seconds
                   batch_size = b_size,
                   class_weight = class_weights,
                  callbacks=[tensorboard_callback],
-                 verbose = 0)
+                 verbose = 1)
         model.save_weights(model_dir)
         #if i%2 == 0:
         #    learn_rate = learn_rate/2

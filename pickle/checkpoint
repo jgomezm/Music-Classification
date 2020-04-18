@@ -1,2 +1,2 @@
-model_checkpoint_path: "32_32_32"
-all_model_checkpoint_paths: "32_32_32"
+model_checkpoint_path: "save"
+all_model_checkpoint_paths: "save"
