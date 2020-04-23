@@ -1,2 +1,2 @@
-model_checkpoint_path: "8_8_64"
-all_model_checkpoint_paths: "8_8_64"
+model_checkpoint_path: "64_64_64"
+all_model_checkpoint_paths: "64_64_64"
