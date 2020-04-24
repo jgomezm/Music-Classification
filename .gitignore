@@ -6,3 +6,7 @@
 .ipynb_checkpoints/
 Copy.ipynb
 sampling.py
+*.profile-empty
+*.data-00000-of-00001
+*.index
+*.data-00000-of-00001
